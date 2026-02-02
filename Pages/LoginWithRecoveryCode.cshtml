@@ -1,0 +1,48 @@
+@page
+@model AceJob.Pages.LoginWithRecoveryCodeModel
+@{
+    ViewData["Title"] = "Recovery Code Login";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+  <div class="col-md-5">
+ <div class="card shadow">
+      <div class="card-header bg-warning text-dark text-center">
+     <i class="bi bi-key" style="font-size: 2rem;"></i>
+       <h4 class="mb-0 mt-2">Recovery Code</h4>
+      </div>
+     <div class="card-body">
+ <div class="alert alert-warning">
+       <i class="bi bi-exclamation-triangle me-2"></i>
+         <strong>Using a recovery code</strong>
+          <p class="mb-0 small mt-2">
+    Enter one of your recovery codes to sign in. Each code can only be used once.
+         </p>
+     </div>
+
+ <form method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+   <div class="mb-4">
+       <label asp-for="RecoveryCode" class="form-label">Recovery Code</label>
+ <input asp-for="RecoveryCode" class="form-control form-control-lg text-center"
+     placeholder="XXXXX-XXXXX" autofocus autocomplete="off"
+    style="letter-spacing: 0.2em;" />
+          <span asp-validation-for="RecoveryCode" class="text-danger"></span>
+  </div>
+
+          <div class="d-grid gap-2">
+     <button type="submit" class="btn btn-warning btn-lg">
+   <i class="bi bi-check-lg me-2"></i>Sign In
+  </button>
+       <a asp-page="/LoginWith2fa" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-2"></i>Back to authenticator
+  </a>
+   </div>
+       </form>
+ </div>
+   </div>
+        </div>
+  </div>
+</div>

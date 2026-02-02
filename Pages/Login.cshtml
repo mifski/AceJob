@@ -1,0 +1,345 @@
+@page
+@model AceJob.Pages.LoginModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    ViewData["Title"] = "Login";
+    var siteKey = Configuration["RecaptchaSettings:SiteKey"];
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-sm-12 col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h1 class="card-title text-center mb-4">Login</h1>
+
+                    @if (!string.IsNullOrEmpty(Model.InfoMessage))
+                    {
+                        <div class="alert alert-info text-center" role="alert">
+                            @Model.InfoMessage
+                        </div>
+                    }
+
+                    <form method="post" id="loginForm">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <!-- Tracking Prevention Warning -->
+                        <div id="trackingWarning" class="alert alert-warning" style="display: none;">
+                            <small>
+                                <strong>?? Browser Privacy Mode Detected</strong><br>
+                                Your browser's tracking prevention may interfere with reCAPTCHA.
+                                If login fails, try:
+                            <ul class="mb-0" style="font-size: 0.85em;">
+                                <li>Allowing cookies for this site</li>
+                                <li>Disabling tracking prevention temporarily</li>
+                                <li>Using a different browser</li>
+                            </ul>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" asp-for="LModel.Email">Email Address</label>
+                            <input type="email" asp-for="LModel.Email" class="form-control"
+                                placeholder="your.email@example.com" autofocus />
+                            <span asp-validation-for="LModel.Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" asp-for="LModel.Password">Password</label>
+                            <div class="input-group">
+                                <input type="password" asp-for="LModel.Password" class="form-control"
+                                    placeholder="Enter your password" id="passwordInput" />
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword"
+                                    aria-label="Toggle password visibility">
+                                    <i class="bi bi-eye" id="toggleIcon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="LModel.Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" asp-for="LModel.RememberMe" class="form-check-input" id="rememberMe" />
+                            <label class="form-check-label" for="rememberMe">
+                                Remember me
+                            </label>
+                        </div>
+
+                        <!-- Hidden field for reCAPTCHA token -->
+                        <input type="hidden" asp-for="LModel.RecaptchaToken" id="recaptchaToken" />
+
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg" id="loginBtn">Login</button>
+                        </div>
+
+                        <!-- reCAPTCHA badge notice -->
+                        <div class="text-center mb-3">
+                            <small class="text-muted">
+                                This site is protected by reCAPTCHA and the Google
+                                <a href="https://policies.google.com/privacy" target="_blank">Privacy Policy</a> and
+                                <a href="https://policies.google.com/terms" target="_blank">Terms of Service</a> apply.
+                            </small>
+                        </div>
+
+                        <div class="text-center">
+                            <p class="mb-0">Don't have an account? <a asp-page="/Register">Register here</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Google reCAPTCHA v3 -->
+    <script src="https://www.google.com/recaptcha/api.js?render=@siteKey"></script>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // Password visibility toggle
+            const passwordInput = document.getElementById('passwordInput');
+            const togglePassword = document.getElementById('togglePassword');
+            const toggleIcon = document.getElementById('toggleIcon');
+
+            togglePassword.addEventListener('click', function () {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                toggleIcon.classList.toggle('bi-eye', !isPassword);
+                toggleIcon.classList.toggle('bi-eye-slash', isPassword);
+            });
+
+            // Configuration
+            const config = {
+                siteKey: '@siteKey',
+                maxRetries: 2,
+                loadTimeout: 15000,
+                executeTimeout: 10000
+            };
+
+            // DOM Elements
+            const elements = {
+                form: document.getElementById('loginForm'),
+                recaptchaToken: document.getElementById('recaptchaToken'),
+                loginBtn: document.getElementById('loginBtn'),
+                trackingWarning: document.getElementById('trackingWarning')
+            };
+
+            // State
+            let state = {
+                recaptchaLoaded: false,
+                isSubmitting: false,
+                retryCount: 0
+            };
+
+            console.log('?? Initializing reCAPTCHA with Site Key:', config.siteKey);
+
+            // Utility: Detect privacy/tracking prevention features
+            function detectPrivacyFeatures() {
+                const indicators = [];
+
+                try {
+                    if (navigator.globalPrivacyControl) indicators.push('GPC');
+                    if (navigator.doNotTrack === "1") indicators.push('DNT');
+                    if (window.navigator.brave !== undefined) indicators.push('Brave');
+                    if (navigator.userAgent.includes('Edg/')) indicators.push('Edge');
+
+                    // Check storage access
+                    try {
+                        localStorage.setItem('test', 'test');
+                        localStorage.removeItem('test');
+                    } catch {
+                        indicators.push('Storage Blocked');
+                    }
+                } catch (e) {
+                    console.warn('Privacy detection error:', e);
+                }
+
+                if (indicators.length > 0) {
+                    console.warn('?? Privacy features detected:', indicators.join(', '));
+                    showWarning('warning',
+                        '?? Browser Privacy Mode Detected',
+                        'Your browser\'s tracking prevention may interfere with reCAPTCHA.',
+                        ['Allowing cookies for this site', 'Disabling tracking prevention temporarily', 'Using a different browser']);
+                    return true;
+                }
+                return false;
+            }
+
+            // Utility: Show warning/error message
+            function showWarning(type, title, message, suggestions) {
+                elements.trackingWarning.style.display = 'block';
+                elements.trackingWarning.className = `alert alert-${type === 'error' ? 'danger' : 'warning'}`;
+
+                let html = `<strong>${title}</strong><br><small>${message}`;
+                if (suggestions && suggestions.length > 0) {
+                    html += '<ul class="mb-0 mt-2" style="font-size: 0.85em;">';
+                    suggestions.forEach(s => html += `<li>${s}</li>`);
+                    html += '</ul>';
+                }
+                html += '</small>';
+                elements.trackingWarning.innerHTML = html;
+            }
+
+            // Utility: Reset button to default state
+            function resetButton() {
+                elements.loginBtn.disabled = false;
+                elements.loginBtn.innerHTML = 'Login';
+                state.isSubmitting = false;
+            }
+
+            // Utility: Set button to loading state
+            function setButtonLoading() {
+                elements.loginBtn.disabled = true;
+                elements.loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying...';
+            }
+
+            // Wait for reCAPTCHA to load with timeout
+            function waitForRecaptcha() {
+                return new Promise((resolve, reject) => {
+                    const startTime = Date.now();
+
+                    const checkInterval = setInterval(() => {
+                        if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.ready === 'function') {
+                            clearInterval(checkInterval);
+                            console.log('? reCAPTCHA API loaded');
+                            state.recaptchaLoaded = true;
+                            resolve();
+                        } else if (Date.now() - startTime >= config.loadTimeout) {
+                            clearInterval(checkInterval);
+                            console.error('? reCAPTCHA failed to load after timeout');
+                            reject(new Error('reCAPTCHA load timeout'));
+                        }
+                    }, 500);
+                });
+            }
+
+            // Execute reCAPTCHA and get token
+            function executeRecaptcha() {
+                return new Promise((resolve, reject) => {
+                    if (!state.recaptchaLoaded) {
+                        reject(new Error('reCAPTCHA not loaded'));
+                        return;
+                    }
+
+                    const timeout = setTimeout(() => {
+                        reject(new Error('reCAPTCHA execution timeout'));
+                    }, config.executeTimeout);
+
+                    grecaptcha.ready(function () {
+                        grecaptcha.execute(config.siteKey, { action: 'login' })
+                            .then(function (token) {
+                                clearTimeout(timeout);
+                                console.log('? reCAPTCHA token received, length:', token.length);
+                                resolve(token);
+                            })
+                            .catch(function (error) {
+                                clearTimeout(timeout);
+                                console.error('? reCAPTCHA execution error:', error);
+                                reject(error);
+                            });
+                    });
+                });
+            }
+
+            // Handle form submission
+            async function handleSubmit(e) {
+                e.preventDefault();
+
+                if (state.isSubmitting) {
+                    console.log('Already submitting...');
+                    return false;
+                }
+
+                state.isSubmitting = true;
+
+                // Check if reCAPTCHA loaded
+                if (!state.recaptchaLoaded) {
+                    console.error('? reCAPTCHA not loaded');
+
+                    const userChoice = confirm(
+                        '?? Security Verification Unavailable\n\n' +
+                        'reCAPTCHA is being blocked by your browser.\n\n' +
+                        'This usually happens when:\n' +
+                        '? Tracking prevention is enabled (Edge, Safari)\n' +
+                        '? Strict privacy mode is active\n' +
+                        '? Browser extensions are blocking Google\n\n' +
+                        'Click OK to try anyway (may fail), or Cancel to fix browser settings first.'
+                    );
+
+                    if (userChoice) {
+                        elements.recaptchaToken.value = 'browser-blocked';
+                        elements.form.submit();
+                    } else {
+                        resetButton();
+                    }
+                    return false;
+                }
+
+                setButtonLoading();
+
+                try {
+                    const token = await executeRecaptcha();
+                    elements.recaptchaToken.value = token;
+
+                    console.log('?? Submitting login form');
+                    HTMLFormElement.prototype.submit.call(elements.form);
+
+                } catch (error) {
+                    console.error('? reCAPTCHA error:', error);
+
+                    // Retry logic
+                    if (state.retryCount < config.maxRetries) {
+                        state.retryCount++;
+                        console.log(`?? Retrying... (${state.retryCount}/${config.maxRetries})`);
+                        state.isSubmitting = false;
+
+                        setTimeout(() => handleSubmit(e), 1000);
+                        return;
+                    }
+
+                    resetButton();
+
+                    showWarning('error',
+                        '? Security Verification Failed',
+                        error.message || 'reCAPTCHA could not verify your request.',
+                        [
+                            'Disable tracking prevention in Edge (Settings ¡ú Privacy ¡ú Balanced)',
+                            'Allow third-party cookies for this site',
+                            'Disable browser extensions temporarily',
+                            'Try using Chrome or Firefox',
+                            'Make sure google.com is not blocked'
+                        ]);
+                }
+            }
+
+            // Initialize
+            function init() {
+                detectPrivacyFeatures();
+
+                waitForRecaptcha()
+                    .then(() => {
+                        console.log('? reCAPTCHA ready for login');
+                    })
+                    .catch((error) => {
+                        console.error('? Initialization error:', error);
+                        showWarning('error',
+                            '? reCAPTCHA Failed to Load',
+                            'Security verification could not be loaded.',
+                            [
+                                'Check your internet connection',
+                                'Disable tracking prevention for this site',
+                                'Allow cookies from google.com and gstatic.com',
+                                'Temporarily disable browser extensions',
+                                'Try using Chrome, Firefox, or Edge without strict privacy settings'
+                            ])
+                    });
+
+                elements.form.addEventListener('submit', handleSubmit);
+            }
+
+            init();
+        })();
+    </script>
+}

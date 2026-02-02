@@ -1,0 +1,188 @@
+@page
+@model AceJob.Pages.TwoFactorAuthModel
+@{
+    ViewData["Title"] = "Two-Factor Authentication";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+     <div class="col-md-8">
+        <div class="card shadow">
+              <div class="card-header bg-primary text-white">
+          <h4 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Two-Factor Authentication (2FA)</h4>
+         </div>
+     <div class="card-body">
+             @if (!string.IsNullOrEmpty(Model.StatusMessage))
+       {
+        <div class="alert @(Model.StatusMessage.Contains("Error") ? "alert-danger" : "alert-success")">
+         @Model.StatusMessage
+       </div>
+        }
+
+                @if (Model.Is2faEnabled)
+         {
+  <!-- 2FA is enabled -->
+        <div class="text-center mb-4">
+               <i class="bi bi-shield-check text-success" style="font-size: 4rem;"></i>
+   <h4 class="text-success mt-3">Two-Factor Authentication is Enabled</h4>
+       <p class="text-muted">Your account has an extra layer of security.</p>
+          </div>
+
+     <div class="alert alert-info">
+         <i class="bi bi-info-circle me-2"></i>
+              <strong>Recovery Codes:</strong> Make sure you have saved your recovery codes in a safe place.
+              If you lose access to your authenticator app, you'll need these codes to access your account.
+ </div>
+
+              <form method="post" asp-page-handler="Disable" class="mt-4">
+         <div class="d-grid gap-2">
+  <button type="submit" class="btn btn-danger btn-lg"
+        onclick="return confirm('Are you sure you want to disable Two-Factor Authentication?')">
+   <i class="bi bi-shield-x me-2"></i>Disable 2FA
+  </button>
+      <a asp-page-handler="GenerateRecoveryCodes" class="btn btn-outline-secondary">
+         <i class="bi bi-key me-2"></i>Generate New Recovery Codes
+       </a>
+ </div>
+      </form>
+          }
+       else
+          {
+             <!-- 2FA is not enabled - Setup wizard -->
+ @if (Model.ShowSetup)
+             {
+               <div class="row">
+     <div class="col-md-6">
+          <h5>Step 1: Scan QR Code</h5>
+          <p class="text-muted">
+            Use your authenticator app (Google Authenticator, Microsoft Authenticator, Authy, etc.)
+        to scan this QR code:
+      </p>
+             <div class="text-center my-3 p-3 bg-light rounded">
+         <img src="@Model.QrCodeUrl" alt="QR Code for 2FA" class="img-fluid" style="max-width: 200px;" />
+            </div>
+    <p class="text-muted small">
+   <strong>Can't scan?</strong> Enter this code manually:<br />
+  <code class="user-select-all">@Model.SharedKey</code>
+   </p>
+      </div>
+            <div class="col-md-6">
+  <h5>Step 2: Verify Code</h5>
+              <p class="text-muted">
+        Enter the 6-digit code from your authenticator app to complete setup:
+ </p>
+             <form method="post" asp-page-handler="Enable">
+                 <div class="mb-3">
+           <label asp-for="VerificationCode" class="form-label">Verification Code</label>
+    <input asp-for="VerificationCode" class="form-control form-control-lg text-center"
+         placeholder="000000" maxlength="6" pattern="[0-9]{6}" required
+               style="letter-spacing: 0.5em; font-size: 1.5rem;" />
+        <span asp-validation-for="VerificationCode" class="text-danger"></span>
+           </div>
+      <div class="d-grid">
+  <button type="submit" class="btn btn-success btn-lg">
+                 <i class="bi bi-check-lg me-2"></i>Enable 2FA
+    </button>
+     </div>
+       </form>
+       </div>
+     </div>
+   }
+          else
+    {
+       <!-- Initial state - not set up -->
+     <div class="text-center mb-4">
+  <i class="bi bi-shield-exclamation text-warning" style="font-size: 4rem;"></i>
+  <h4 class="mt-3">Two-Factor Authentication is Not Enabled</h4>
+     <p class="text-muted">Add an extra layer of security to your account.</p>
+   </div>
+
+    <div class="row mb-4">
+         <div class="col-md-6">
+           <div class="card h-100 border-success">
+    <div class="card-body text-center">
+      <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+      <h6 class="mt-2">Benefits</h6>
+     <ul class="text-start small">
+    <li>Extra security layer</li>
+               <li>Protects against password theft</li>
+               <li>Industry standard security</li>
+        </ul>
+          </div>
+     </div>
+          </div>
+           <div class="col-md-6">
+   <div class="card h-100 border-info">
+      <div class="card-body text-center">
+   <i class="bi bi-phone text-info" style="font-size: 2rem;"></i>
+         <h6 class="mt-2">Requirements</h6>
+            <ul class="text-start small">
+    <li>Smartphone or tablet</li>
+     <li>Authenticator app installed</li>
+      <li>Camera to scan QR code</li>
+         </ul>
+  </div>
+       </div>
+              </div>
+      </div>
+
+<form method="post" asp-page-handler="Setup">
+        <div class="d-grid">
+  <button type="submit" class="btn btn-primary btn-lg">
+    <i class="bi bi-shield-plus me-2"></i>Set Up Two-Factor Authentication
+         </button>
+           </div>
+            </form>
+       }
+    }
+
+          <hr class="my-4">
+          <div class="text-center">
+             <a href="/" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Home
+             </a>
+          </div>
+    </div>
+      </div>
+  </div>
+    </div>
+</div>
+
+@if (Model.RecoveryCodes != null && Model.RecoveryCodes.Any())
+{
+    <!-- Recovery Codes Modal -->
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+     <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+       <div class="modal-header bg-warning">
+      <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Save Your Recovery Codes</h5>
+ </div>
+          <div class="modal-body">
+         <div class="alert alert-warning">
+       <strong>Important!</strong> Save these recovery codes in a secure location.
+   If you lose access to your authenticator app, you'll need these codes to access your account.
+      Each code can only be used once.
+             </div>
+       <div class="bg-light p-3 rounded">
+        <div class="row">
+       @foreach (var code in Model.RecoveryCodes)
+         {
+   <div class="col-6 mb-2">
+     <code class="user-select-all">@code</code>
+                 </div>
+       }
+     </div>
+         </div>
+          </div>
+                <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="window.print()">
+         <i class="bi bi-printer me-2"></i>Print
+         </button>
+     <a href="/TwoFactorAuth" class="btn btn-primary">
+      <i class="bi bi-check-lg me-2"></i>I've Saved These Codes
+    </a>
+        </div>
+            </div>
+        </div>
+    </div>
+}
