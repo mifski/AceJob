@@ -59,7 +59,8 @@ public sealed class SessionTimeoutMiddleware
  // (Session values are cleared after IdleTimeout.)
  if (string.IsNullOrEmpty(context.Session.GetString(UserIdKey)))
  {
- _logger.LogInformation("Session expired for authenticated user. Redirecting to /Login. Path: {Path}", path);
+ var safePath = path.ToString().Replace("\r", string.Empty).Replace("\n", string.Empty);
+ _logger.LogInformation("Session expired for authenticated user. Redirecting to /Login. Path: {Path}", safePath);
 
  // Clear any remaining session values
  context.Session.Clear();
