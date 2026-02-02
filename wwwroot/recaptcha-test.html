@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>reCAPTCHA Test</title>
+    <meta charset="utf-8" />
+    <style>
+     body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .test-box { border: 1px solid #ddd; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        #results { margin-top: 20px; }
+        .log-entry { padding: 5px; margin: 2px 0; font-family: monospace; font-size: 12px; }
+ </style>
+</head>
+<body>
+    <h1>?? reCAPTCHA v3 Diagnostic Tool</h1>
+    
+    <div class="test-box info">
+        <h3>Configuration</h3>
+     <p><strong>Site Key:</strong> <code id="siteKey">Loading...</code></p>
+     <p><strong>Test URL:</strong> <code id="testUrl">Loading...</code></p>
+    </div>
+
+    <div class="test-box">
+        <h3>Step 1: Load reCAPTCHA Script</h3>
+    <p>Checking if Google reCAPTCHA script loads correctly...</p>
+    <div id="scriptStatus">Testing...</div>
+    </div>
+
+    <div class="test-box">
+        <h3>Step 2: Get Token</h3>
+        <button id="getTokenBtn" onclick="testGetToken()">Click to Get Token</button>
+        <div id="tokenStatus" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="test-box">
+    <h3>Step 3: Verify Token with Your Backend</h3>
+        <button id="verifyBtn" onclick="testVerifyToken()" disabled>Verify Token</button>
+    <div id="verifyStatus" style="margin-top: 10px;"></div>
+    </div>
+
+    <div id="results">
+        <h3>Console Log</h3>
+        <div id="console" style="max-height: 300px; overflow-y: auto; background: #f9f9f9; padding: 10px; border: 1px solid #ddd;"></div>
+ </div>
+
+    <!-- REPLACE THIS WITH YOUR ACTUAL SITE KEY -->
+    <script>
+        const SITE_KEY = '6LfZU08sAAAAAOMhmYxKu_ddpKoUEEoaq3n3oyew'; // Your site key from appsettings.json
+     let currentToken = '';
+
+        document.getElementById('siteKey').textContent = SITE_KEY;
+   document.getElementById('testUrl').textContent = window.location.href;
+
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+    entry.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    console.appendChild(entry);
+     console.scrollTop = console.scrollHeight;
+            console.log(message);
+    }
+
+        // Test Step 1: Script Loading
+        function checkScriptLoading() {
+       log('Testing reCAPTCHA script loading...');
+       
+  const script = document.createElement('script');
+     script.src = `https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`;
+     script.async = true;
+         script.defer = true;
+    
+ script.onload = function() {
+          log('? reCAPTCHA script loaded successfully', 'success');
+   document.getElementById('scriptStatus').innerHTML = '<span style="color: green;">? Script loaded successfully</span>';
+ 
+     // Wait for grecaptcha to be ready
+ let checkCount = 0;
+         const checkInterval = setInterval(function() {
+           if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
+ clearInterval(checkInterval);
+        log('? grecaptcha object is ready', 'success');
+              document.getElementById('scriptStatus').innerHTML = '<span style="color: green;">? Script loaded and ready</span>';
+         } else {
+   checkCount++;
+           if (checkCount > 20) {
+       clearInterval(checkInterval);
+         log('? grecaptcha object not ready after 10 seconds', 'error');
+      document.getElementById('scriptStatus').innerHTML = '<span style="color: red;">? Script loaded but grecaptcha not ready</span>';
+         }
+        }
+         }, 500);
+         };
+            
+         script.onerror = function() {
+         log('? Failed to load reCAPTCHA script', 'error');
+   document.getElementById('scriptStatus').innerHTML = '<span style="color: red;">? Failed to load script. Check internet connection.</span>';
+ };
+    
+        document.head.appendChild(script);
+        }
+
+        // Test Step 2: Get Token
+        function testGetToken() {
+            log('Attempting to get reCAPTCHA token...');
+       document.getElementById('tokenStatus').textContent = 'Getting token...';
+            
+if (typeof grecaptcha === 'undefined') {
+                log('? grecaptcha is not defined', 'error');
+       document.getElementById('tokenStatus').innerHTML = '<span style="color: red;">? grecaptcha not loaded</span>';
+     return;
+            }
+     
+    grecaptcha.ready(function() {
+grecaptcha.execute(SITE_KEY, {action: 'test'})
+ .then(function(token) {
+   currentToken = token;
+             log(`? Token received: ${token.substring(0, 50)}...`, 'success');
+        document.getElementById('tokenStatus').innerHTML = `
+    <span style="color: green;">? Token received successfully</span>
+  <pre>${token}</pre>
+         `;
+        document.getElementById('verifyBtn').disabled = false;
+      })
+         .catch(function(error) {
+           log(`? Error getting token: ${error.message}`, 'error');
+        document.getElementById('tokenStatus').innerHTML = `<span style="color: red;">? Error: ${error.message}</span>`;
+         });
+   });
+  }
+
+        // Test Step 3: Verify with Backend
+        function testVerifyToken() {
+       if (!currentToken) {
+           alert('Please get a token first (Step 2)');
+         return;
+ }
+            
+     log('Verifying token with backend...');
+   document.getElementById('verifyStatus').textContent = 'Verifying...';
+            
+    // Note: You would need to create an API endpoint for this test
+            // For now, we'll show what the request would look like
+ const requestInfo = {
+      url: '/api/test-recaptcha',
+    method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+      body: { token: currentToken }
+        };
+    
+            log('Backend verification request would be:');
+    log(JSON.stringify(requestInfo, null, 2));
+          
+       document.getElementById('verifyStatus').innerHTML = `
+    <div style="background: #fff3cd; padding: 10px; border-radius: 5px;">
+          <strong>?? Backend Test Not Available</strong><br>
+        To test backend verification:<br>
+      1. Use your actual login page<br>
+        2. Check server logs for reCAPTCHA messages<br>
+          3. Look for "reCAPTCHA API Response" in logs<br><br>
+      <strong>Token to test:</strong><br>
+          <pre>${currentToken}</pre>
+    </div>
+   `;
+        }
+
+  // Start testing when page loads
+    window.onload = function() {
+            log('=== reCAPTCHA Diagnostic Tool Started ===');
+ log(`Site Key: ${SITE_KEY}`);
+        log(`Page URL: ${window.location.href}`);
+      checkScriptLoading();
+        };
+    </script>
+</body>
+</html>

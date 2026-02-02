@@ -1,0 +1,198 @@
+﻿@page
+@model AceJob.Pages.RegisterModel
+@{
+ ViewData["Title"] = "Register";
+}
+
+<div class="container mt-5">
+ <div class="row justify-content-center">
+ <div class="col-sm-12 col-md-8 col-lg-6">
+ <div class="card shadow">
+ <div class="card-body">
+ <h1 class="card-title text-center mb-4">Register</h1>
+
+ <form method="post" enctype="multipart/form-data">
+ <h4 class="text-center">Create a new account.</h4>
+ <hr />
+
+ @if (!ViewData.ModelState.IsValid)
+ {
+ <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+ }
+
+ <div class="row">
+ <div class="col-md-6 mb-3">
+ <label class="form-label" asp-for="RModel.FirstName"></label>
+ <input asp-for="RModel.FirstName" class="form-control" />
+ <span asp-validation-for="RModel.FirstName" class="text-danger"></span>
+ </div>
+
+ <div class="col-md-6 mb-3">
+ <label class="form-label" asp-for="RModel.LastName"></label>
+ <input asp-for="RModel.LastName" class="form-control" />
+ <span asp-validation-for="RModel.LastName" class="text-danger"></span>
+ </div>
+ </div>
+
+ <div class="mb-3">
+ <label class="form-label" asp-for="RModel.Gender"></label>
+ <select asp-for="RModel.Gender" class="form-select">
+ <option value="">-- Select Gender --</option>
+ <option value="Male">Male</option>
+ <option value="Female">Female</option>
+ </select>
+ <span asp-validation-for="RModel.Gender" class="text-danger"></span>
+ </div>
+
+ <div class="mb-3">
+ <label class="form-label" asp-for="RModel.NRIC"></label>
+ <input asp-for="RModel.NRIC" class="form-control" />
+ <span asp-validation-for="RModel.NRIC" class="text-danger"></span>
+ </div>
+
+ <div class="mb-3">
+ <label class="form-label" asp-for="RModel.Email"></label>
+ <input asp-for="RModel.Email" class="form-control" />
+ <span asp-validation-for="RModel.Email" class="text-danger"></span>
+ </div>
+
+ <div class="mb-2">
+ <label class="form-label" asp-for="RModel.Password"></label>
+ <div class="input-group">
+ <input asp-for="RModel.Password" type="password" class="form-control" id="password" />
+ <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Toggle password visibility">
+ <i class="bi bi-eye" id="togglePasswordIcon"></i>
+ </button>
+ </div>
+ <span asp-validation-for="RModel.Password" class="text-danger"></span>
+ <div id="password-strength-feedback" class="mt-1 small"></div>
+ </div>
+
+ <div class="mb-3">
+ <label class="form-label" asp-for="RModel.ConfirmPassword"></label>
+ <div class="input-group">
+ <input asp-for="RModel.ConfirmPassword" type="password" class="form-control" id="confirmPassword" />
+ <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword" aria-label="Toggle confirm password visibility">
+ <i class="bi bi-eye" id="toggleConfirmPasswordIcon"></i>
+ </button>
+ </div>
+ <span asp-validation-for="RModel.ConfirmPassword" class="text-danger"></span>
+ </div>
+
+ <div class="mb-3">
+ <label class="form-label" asp-for="RModel.DateOfBirth"></label>
+ <input asp-for="RModel.DateOfBirth" class="form-control" />
+ <span asp-validation-for="RModel.DateOfBirth" class="text-danger"></span>
+ </div>
+
+ <div class="mb-3">
+ <label class="form-label" asp-for="RModel.Resume"></label>
+ <input asp-for="RModel.Resume" type="file" class="form-control" />
+ <span asp-validation-for="RModel.Resume" class="text-danger"></span>
+ </div>
+
+ <div class="mb-3">
+ <label class="form-label" asp-for="RModel.WhoAmI"></label>
+ <textarea asp-for="RModel.WhoAmI" class="form-control" rows="4"></textarea>
+ <span asp-validation-for="RModel.WhoAmI" class="text-danger"></span>
+ </div>
+
+ <div class="d-grid gap-2">
+ <button type="submit" class="btn btn-primary btn-lg">Register</button>
+ </div>
+
+ <div class="text-center mt-3">
+ <p class="mb-0">Already have an account? <a asp-page="/Login">Login here</a></p>
+ </div>
+ </form>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+
+@section Scripts {
+ <partial name="_ValidationScriptsPartial" />
+ <script>
+ $(document).ready(function () {
+ // Password visibility toggles
+ const passwordInput = document.getElementById('password');
+ const togglePassword = document.getElementById('togglePassword');
+ const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+ const confirmPasswordInput = document.getElementById('confirmPassword');
+ const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+ const toggleConfirmPasswordIcon = document.getElementById('toggleConfirmPasswordIcon');
+
+ togglePassword.addEventListener('click', function () {
+ const isPassword = passwordInput.type === 'password';
+ passwordInput.type = isPassword ? 'text' : 'password';
+ togglePasswordIcon.classList.toggle('bi-eye', !isPassword);
+ togglePasswordIcon.classList.toggle('bi-eye-slash', isPassword);
+ });
+
+ toggleConfirmPassword.addEventListener('click', function () {
+ const isPassword = confirmPasswordInput.type === 'password';
+ confirmPasswordInput.type = isPassword ? 'text' : 'password';
+ toggleConfirmPasswordIcon.classList.toggle('bi-eye', !isPassword);
+ toggleConfirmPasswordIcon.classList.toggle('bi-eye-slash', isPassword);
+ });
+
+ // Password strength feedback
+ $('#password').on('keyup', function () {
+ var password = $(this).val();
+ var feedback = $('#password-strength-feedback');
+ var strength =0;
+ var messages = [];
+
+ if (password.length >=12) {
+ strength++;
+ } else {
+ messages.push('at least12 characters');
+ }
+
+ if (password.match(/[a-z]/)) {
+ strength++;
+ } else {
+ messages.push('a lowercase letter');
+ }
+
+ if (password.match(/[A-Z]/)) {
+ strength++;
+ } else {
+ messages.push('an uppercase letter');
+ }
+
+ if (password.match(/[0-9]/)) {
+ strength++;
+ } else {
+ messages.push('a number');
+ }
+
+ if (password.match(/[^a-zA-Z0-9]/)) {
+ strength++;
+ } else {
+ messages.push('a special character');
+ }
+
+ var strengthText = 'Password strength: ';
+ if (strength <3) {
+ feedback.css('color', 'red');
+ strengthText += 'Weak. ';
+ } else if (strength <5) {
+ feedback.css('color', 'orange');
+ strengthText += 'Medium. ';
+ } else {
+ feedback.css('color', 'green');
+ strengthText += 'Strong.';
+ }
+
+ if (messages.length >0) {
+ strengthText += ' Missing: ' + messages.join(', ');
+ }
+
+ feedback.html(strengthText);
+ });
+ });
+ </script>
+}

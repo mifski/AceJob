@@ -1,0 +1,75 @@
+@page
+@model AceJob.Pages.LoginWith2faModel
+@{
+    ViewData["Title"] = "Two-Factor Authentication";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+    <div class="card shadow">
+             <div class="card-header bg-primary text-white text-center">
+       <i class="bi bi-shield-lock" style="font-size: 2rem;"></i>
+                    <h4 class="mb-0 mt-2">Two-Factor Authentication</h4>
+                </div>
+      <div class="card-body">
+         <p class="text-muted text-center">
+    Enter the 6-digit code from your authenticator app to complete sign in.
+        </p>
+
+        <form method="post">
+      @Html.AntiForgeryToken()
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+     <!-- Hidden field to preserve RememberMe value from login page -->
+           <input type="hidden" asp-for="RememberMe" />
+
+       <div class="mb-4">
+  <label asp-for="TwoFactorCode" class="form-label">Authentication Code</label>
+      <input asp-for="TwoFactorCode" class="form-control form-control-lg text-center"
+                  placeholder="000000" maxlength="6" autofocus autocomplete="off"
+     style="letter-spacing: 0.5em; font-size: 1.5rem;" />
+        <span asp-validation-for="TwoFactorCode" class="text-danger"></span>
+            </div>
+
+   <div class="mb-3 form-check">
+     <input type="checkbox" asp-for="RememberMachine" class="form-check-input" id="rememberMachine" />
+             <label class="form-check-label" for="rememberMachine">
+     Remember this device (don't ask for 2FA for 30 days)
+  </label>
+        </div>
+
+  <div class="d-grid gap-2">
+     <button type="submit" class="btn btn-primary btn-lg">
+       <i class="bi bi-check-lg me-2"></i>Verify
+   </button>
+         </div>
+        </form>
+
+   <hr class="my-4">
+
+    <div class="text-center">
+              <p class="text-muted small mb-2">Don't have access to your authenticator app?</p>
+      <a asp-page="/LoginWithRecoveryCode" asp-route-returnUrl="@Model.ReturnUrl"
+ class="btn btn-outline-secondary btn-sm">
+<i class="bi bi-key me-2"></i>Use a recovery code
+            </a>
+         </div>
+     </div>
+     </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-submit when 6 digits are entered
+        document.getElementById('TwoFactorCode').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+      if (this.value.length === 6) {
+       // Optional: auto-submit
+           // this.form.submit();
+         }
+        });
+  </script>
+}
