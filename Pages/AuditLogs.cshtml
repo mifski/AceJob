@@ -1,0 +1,378 @@
+@page
+@model AceJob.Pages.AuditLogsModel
+@using AceJob.Model
+@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
+@{
+ ViewData["Title"] = "Activity Logs - AceJob";
+ var currentUserId = UserManager.GetUserId(User);
+ var isAdminOrHr = User.IsInRole("Admin") || User.IsInRole("HR");
+}
+
+<div class="container-fluid mt-4">
+ <!-- Page Header with Back Button -->
+ <div class="row mb-5">
+ <div class="col-12">
+ <div class="d-flex align-items-center gap-3 mb-3">
+ <a href="/" class="btn btn-outline-secondary btn-sm" title="Back to home">
+ <i class="bi bi-arrow-left me-2"></i>Back
+ </a>
+ <h1 class="mb-0">
+ <i class="bi bi-shield-check text-primary me-2"></i>Activity Logs
+ </h1>
+ </div>
+ <p class="text-muted mb-0 ms-5">
+ @if (isAdminOrHr)
+ {
+ <span><i class="bi bi-info-circle me-1"></i>View and monitor all system activity across the platform</span>
+ }
+ else
+ {
+ <span><i class="bi bi-info-circle me-1"></i>Track your account security and activity history</span>
+ }
+ </p>
+ <div class="mt-3 ms-5">
+ <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+ <i class="bi bi-file-text me-2"></i>@Model.TotalCount total records
+ </span>
+ </div>
+ </div>
+ </div>
+
+ <!-- Filter Section with Enhanced Styling -->
+ <div class="row mb-4">
+ <div class="col-12">
+ <div class="card border-0 shadow-sm">
+ <div class="card-header bg-gradient bg-light border-bottom-0">
+ <div class="d-flex align-items-center justify-content-between">
+ <div>
+ <h6 class="mb-0 fw-semibold text-dark">
+ <i class="bi bi-funnel text-primary me-2"></i>Filters & Search
+ </h6>
+ </div>
+ <small class="text-muted">Refine your search</small>
+ </div>
+ </div>
+ <div class="card-body">
+ <form method="get" id="filtersForm" class="row g-3 align-items-end">
+ <!-- Action Filter -->
+ @if (Model.AvailableActions.Any())
+ {
+ <div class="col-lg-3 col-md-6">
+ <label class="form-label small fw-semibold d-block mb-2">
+ <i class="bi bi-tag text-info me-1"></i>Action
+ </label>
+ <select class="form-select form-select form-select-sm border-1" asp-for="ActionFilter">
+ <option value="">！ All Actions ！</option>
+ @foreach (var act in Model.AvailableActions)
+ {
+ @if (Model.ActionFilter == act)
+ {
+ <option value="@act" selected>@act</option>
+ }
+ else
+ {
+ <option value="@act">@act</option>
+ }
+ }
+ </select>
+ </div>
+ }
+
+ <!-- Status Filter -->
+ <div class="col-lg-3 col-md-6">
+ <label class="form-label small fw-semibold d-block mb-2">
+ <i class="bi bi-check-circle text-success me-1"></i>Status
+ </label>
+ <select class="form-select form-select form-select-sm border-1" asp-for="StatusFilter">
+ <option value="all">！ All Status ！</option>
+ @if (Model.StatusFilter == "success")
+ {
+ <option value="success" selected>
+ <i class="bi bi-check-circle"></i> Success
+ </option>
+ }
+ else
+ {
+ <option value="success">
+ <i class="bi bi-check-circle"></i> Success
+ </option>
+ }
+ @if (Model.StatusFilter == "failure")
+ {
+ <option value="failure" selected>
+ <i class="bi bi-x-circle"></i> Failed
+ </option>
+ }
+ else
+ {
+ <option value="failure">
+ <i class="bi bi-x-circle"></i> Failed
+ </option>
+ }
+ </select>
+ </div>
+
+ <!-- Date Range: From -->
+ <div class="col-lg-2 col-md-6">
+ <label class="form-label small fw-semibold d-block mb-2">
+ <i class="bi bi-calendar-event text-warning me-1"></i>From
+ </label>
+ <input type="date" class="form-control form-control-sm border-1" asp-for="From" />
+ </div>
+
+ <!-- Date Range: To -->
+ <div class="col-lg-2 col-md-6">
+ <label class="form-label small fw-semibold d-block mb-2">
+ <i class="bi bi-calendar-event text-warning me-1"></i>To
+ </label>
+ <input type="date" class="form-control form-control-sm border-1" asp-for="To" />
+ </div>
+
+ <!-- Buttons Row -->
+ <div class="col-12">
+ <div class="d-flex gap-2 justify-content-between align-items-center flex-wrap">
+ <div class="d-flex gap-2">
+ <button type="submit" class="btn btn-primary btn-sm px-4" title="Apply filters">
+ <i class="bi bi-search me-2"></i>Search
+ </button>
+ <button type="button" id="resetFilters" class="btn btn-outline-secondary btn-sm px-4" title="Clear all filters">
+ <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+ </button>
+ </div>
+ <small class="text-muted d-none d-md-block">
+ <i class="bi bi-info-circle me-1"></i>Adjust filters to refine results. Results per page: <span class="fw-semibold">@Model.PageSize</span>
+ </small>
+ </div>
+ </form>
+ </div>
+ </div>
+ </div>
+
+ <!-- Results Table Section -->
+ <div class="row">
+ <div class="col-12">
+ <div class="card border-0 shadow-sm">
+ <div class="card-header bg-primary bg-gradient text-white d-flex justify-content-between align-items-center">
+ <div>
+ <h6 class="mb-0 fw-semibold">
+ <i class="bi bi-table me-2"></i>Activity Records
+ </h6>
+ </div>
+ <div class="d-flex gap-2 align-items-center">
+ @if (Model.TotalPages > 1)
+ {
+ <span class="badge bg-light text-dark px-3 py-2">
+ Page <strong>@Model.Page</strong> of <strong>@Model.TotalPages</strong>
+ </span>
+ }
+ </div>
+ </div>
+
+ <div class="card-body p-0">
+ @if (Model.Logs.Any())
+ {
+ <div class="table-responsive">
+ <table class="table table-hover table-striped mb-0">
+ <thead class="table-light fw-semibold small">
+ <tr>
+ <th style="width: 15%;">
+ <i class="bi bi-clock me-1"></i>Timestamp
+ </th>
+ <th style="width: 12%;">
+ <i class="bi bi-tag me-1"></i>Action
+ </th>
+ @if (isAdminOrHr)
+ {
+ <th style="width: 15%;">
+ <i class="bi bi-person me-1"></i>User
+ </th>
+ }
+ <th style="width: 25%;">
+ <i class="bi bi-chat-left-text me-1"></i>Description
+ </th>
+ <th style="width: 12%;">
+ <i class="bi bi-geo-alt me-1"></i>IP Address
+ </th>
+ <th class="text-center" style="width: 12%;">
+ <i class="bi bi-check-circle me-1"></i>Status
+ </th>
+ <th class="text-center" style="width: 8%;">
+ <i class="bi bi-eye me-1"></i>Details
+ </th>
+ </tr>
+ </thead>
+ <tbody class="small">
+ @foreach (var log in Model.Logs)
+ {
+ <tr class="align-middle">
+ <td class="text-nowrap">
+ <div class="d-flex flex-column">
+ <span class="fw-semibold">@log.Timestamp.ToString("yyyy-MM-dd")</span>
+ <small class="text-muted">@log.Timestamp.ToString("HH:mm:ss")</small>
+ </div>
+ </td>
+ <td>
+ <span class="badge bg-info-subtle text-info border border-info-subtle">
+ @log.Action
+ </span>
+ </td>
+ @if (isAdminOrHr)
+ {
+ <td>
+ <small class="text-truncate" title="@log.UserEmail">@log.UserEmail</small>
+ </td>
+ }
+ <td>
+ <small class="text-truncate" title="@log.Description">@log.Description</small>
+ </td>
+ <td>
+ <small class="font-monospace text-muted bg-light p-2 rounded d-inline-block">
+ @log.IpAddress
+ </small>
+ </td>
+ <td class="text-center">
+ @if (log.IsSuccess)
+ {
+ <span class="badge bg-success-subtle text-success border border-success-subtle">
+ <i class="bi bi-check-circle me-1"></i>Success
+ </span>
+ }
+ else
+ {
+ <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+ <i class="bi bi-x-circle me-1"></i>Failed
+ </span>
+ }
+ </td>
+ <td class="text-center">
+ @if (isAdminOrHr || log.UserId == currentUserId)
+ {
+ <a class="btn btn-sm btn-outline-primary" href="/AuditLogs/Details?id=@log.Id" title="View full details" data-bs-toggle="tooltip">
+ <i class="bi bi-eye"></i>
+ </a>
+ }
+ else
+ {
+ <span class="text-muted small" title="No access to details">！</span>
+ }
+ </td>
+ </tr>
+ }
+ </tbody>
+ </table>
+ </div>
+ }
+ else
+ {
+ <div class="empty-state p-5 text-center">
+ <div class="display-6 text-muted mb-3">
+ <i class="bi bi-inbox"></i>
+ </div>
+ <h5 class="text-dark mb-2">No Activity Logs Found</h5>
+ <p class="text-muted mb-3">
+ There are no activity logs matching your filters. Try adjusting your search criteria or expanding the date range.
+ </p>
+ <a href="/AuditLogs" class="btn btn-outline-primary btn-sm">
+ <i class="bi bi-arrow-clockwise me-2"></i>Clear Filters
+ </a>
+ </div>
+ }
+ </div>
+
+ <!-- Enhanced Pagination -->
+ @if (Model.TotalPages > 1)
+ {
+ <div class="card-footer bg-light border-top d-flex align-items-center justify-content-between flex-wrap gap-3">
+ <nav aria-label="Activity logs pagination" class="flex-grow-1">
+ <ul class="pagination pagination-sm justify-content-center mb-0">
+ @if (Model.Page > 1)
+ {
+ <li class="page-item">
+ <a class="page-link" href="?Page=1&PageSize=@Model.PageSize&ActionFilter=@Model.ActionFilter&From=@Model.From&To=@Model.To&StatusFilter=@Model.StatusFilter" title="Go to first page">
+ <i class="bi bi-chevron-double-left"></i>
+ </a>
+ </li>
+ <li class="page-item">
+ <a class="page-link" href="?Page=@(Model.Page - 1)&PageSize=@Model.PageSize&ActionFilter=@Model.ActionFilter&From=@Model.From&To=@Model.To&StatusFilter=@Model.StatusFilter" title="Go to previous page">
+ <i class="bi bi-chevron-left"></i>
+ </a>
+ </li>
+ }
+
+ @{ var startPage = Math.Max(1, Model.Page - 2); var endPage = Math.Min(Model.TotalPages, Model.Page + 2); }
+
+ @for (int i = startPage; i <= endPage; i++)
+ {
+ <li class="page-item @(i == Model.Page ? "active" : "")">
+ <a class="page-link" href="?Page=@i&PageSize=@Model.PageSize&ActionFilter=@Model.ActionFilter&From=@Model.From&To=@Model.To&StatusFilter=@Model.StatusFilter">@i</a>
+ </li>
+ }
+
+ @if (Model.Page < Model.TotalPages)
+ {
+ <li class="page-item">
+ <a class="page-link" href="?Page=@(Model.Page + 1)&PageSize=@Model.PageSize&ActionFilter=@Model.ActionFilter&From=@Model.From&To=@Model.To&StatusFilter=@Model.StatusFilter" title="Go to next page">
+ <i class="bi bi-chevron-right"></i>
+ </a>
+ </li>
+ <li class="page-item">
+ <a class="page-link" href="?Page=@Model.TotalPages&PageSize=@Model.PageSize&ActionFilter=@Model.ActionFilter&From=@Model.From&To=@Model.To&StatusFilter=@Model.StatusFilter" title="Go to last page">
+ <i class="bi bi-chevron-double-right"></i>
+ </a>
+ </li>
+ }
+ </ul>
+ </nav>
+
+ <!-- Page Size Selector -->
+ <div class="d-flex align-items-center gap-2">
+ <span class="text-muted small fw-semibold">Per Page:</span>
+ <form method="get" id="pageSizeFooterForm" class="d-flex gap-2">
+ <input type="hidden" name="ActionFilter" value="@Model.ActionFilter" />
+ <input type="hidden" name="From" value="@(Model.From?.ToString("yyyy-MM-dd"))" />
+ <input type="hidden" name="To" value="@(Model.To?.ToString("yyyy-MM-dd"))" />
+ <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+ <select class="form-select form-select-sm" style="width: auto;" name="PageSize" onchange="document.getElementById('pageSizeFooterForm').submit()" title="Change number of records per page">
+ @{ 
+ var pageSizes = new int[] { 10, 20, 50, 100 }; 
+ foreach (var size in pageSizes) 
+ { 
+ if (Model.PageSize == size) 
+ { 
+ <option value="@size" selected>@size</option> 
+ } 
+ else 
+ { 
+ <option value="@size">@size</option> 
+ } 
+ } 
+ }
+ </select>
+ </form>
+ </div>
+ </div>
+ }
+ </div>
+ </div>
+ </div>
+</div>
+
+@section Scripts {
+ <script>
+ // Reset filters button
+ document.addEventListener('DOMContentLoaded', function () {
+ const resetBtn = document.getElementById('resetFilters');
+ if (resetBtn) {
+ resetBtn.addEventListener('click', function () {
+ window.location.href = '/AuditLogs';
+ });
+ }
+
+ // Enable Bootstrap tooltips
+ var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+ return new bootstrap.Tooltip(tooltipTriggerEl);
+ });
+ });
+ </script>
+}

@@ -53,5 +53,10 @@ namespace AceJob.ViewModels
         [Display(Name = "Who Am I")]
         [StringLength(500, ErrorMessage = "Maximum 500 characters allowed")]
         public string WhoAmI { get; set; }
+
+        /// <summary>
+        /// reCAPTCHA v3 token for bot protection
+        /// </summary>
+        public string? RecaptchaToken { get; set; }
     }
 }

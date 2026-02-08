@@ -1,0 +1,51 @@
+@page
+@model AceJob.Pages.AuditLogs.DetailsModel
+@{
+ ViewData["Title"] = "Audit Log Details";
+}
+
+<div class="container mt-4">
+ <div class="row">
+ <div class="col-12">
+ <h2>Audit Log Details</h2>
+ <div class="card">
+ <div class="card-body">
+ @if (Model.Log != null)
+ {
+ <dl class="row">
+ <dt class="col-sm-3">Id</dt>
+ <dd class="col-sm-9">@Model.Log.Id</dd>
+
+ <dt class="col-sm-3">Timestamp (UTC)</dt>
+ <dd class="col-sm-9">@Model.Log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+ 
+ <dt class="col-sm-3">Action</dt>
+ <dd class="col-sm-9">@Model.Log.Action</dd>
+ 
+ <dt class="col-sm-3">User Email</dt>
+ <dd class="col-sm-9">@Model.Log.UserEmail</dd>
+
+ <dt class="col-sm-3">Description</dt>
+ <dd class="col-sm-9">@Model.Log.Description</dd>
+
+ <dt class="col-sm-3">Ip Address</dt>
+ <dd class="col-sm-9">@Model.Log.IpAddress</dd>
+
+ <dt class="col-sm-3">User Agent</dt>
+ <dd class="col-sm-9"><pre>@Model.Log.UserAgent</pre></dd>
+
+ <dt class="col-sm-3">Additional Data</dt>
+ <dd class="col-sm-9"><pre>@Model.Log.AdditionalData</pre></dd>
+
+ <dt class="col-sm-3">Success</dt>
+ <dd class="col-sm-9">@Model.Log.IsSuccess</dd>
+ </dl>
+ }
+ </div>
+ <div class="card-footer text-end">
+ <a class="btn btn-secondary" href="/AuditLogs">Back</a>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
