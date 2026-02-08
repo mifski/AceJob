@@ -97,8 +97,11 @@
  <span asp-validation-for="RModel.WhoAmI" class="text-danger"></span>
  </div>
 
+ <!-- reCAPTCHA token (hidden field) -->
+ <input type="hidden" asp-for="RModel.RecaptchaToken" id="recaptchaToken" />
+
  <div class="d-grid gap-2">
- <button type="submit" class="btn btn-primary btn-lg">Register</button>
+ <button type="submit" class="btn btn-primary btn-lg" id="registerButton">Register</button>
  </div>
 
  <div class="text-center mt-3">
@@ -113,8 +116,51 @@
 
 @section Scripts {
  <partial name="_ValidationScriptsPartial" />
+ 
+ <!-- Google reCAPTCHA v3 -->
+ <script src="https://www.google.com/recaptcha/api.js?render=@(ViewData["RecaptchaSiteKey"])"></script>
+ 
  <script>
  $(document).ready(function () {
+ // reCAPTCHA v3 Integration
+ const siteKey = '@(ViewData["RecaptchaSiteKey"])';
+ 
+ // Generate token on page load
+ if (siteKey && typeof grecaptcha !== 'undefined') {
+ grecaptcha.ready(function () {
+ grecaptcha.execute(siteKey, { action: 'register' })
+ .then(function (token) {
+ document.getElementById('recaptchaToken').value = token;
+ console.log('reCAPTCHA token generated for register action');
+ })
+ .catch(function (error) {
+ console.error('reCAPTCHA error:', error);
+ });
+ });
+ 
+ // Regenerate token on form submit
+ $('#registerButton').on('click', function(e) {
+ e.preventDefault();
+ 
+ if (siteKey && typeof grecaptcha !== 'undefined') {
+ grecaptcha.execute(siteKey, { action: 'register' })
+ .then(function (token) {
+ document.getElementById('recaptchaToken').value = token;
+ // Submit form after getting fresh token
+ $(this).closest('form')[0].submit();
+ }.bind(this))
+ .catch(function (error) {
+ console.error('reCAPTCHA error on submit:', error);
+ // Submit anyway to let server handle the error
+ $(this).closest('form')[0].submit();
+ }.bind(this));
+ } else {
+ // Submit without reCAPTCHA if not available
+ $(this).closest('form')[0].submit();
+ }
+ });
+ }
+
  // Password visibility toggles
  const passwordInput = document.getElementById('password');
  const togglePassword = document.getElementById('togglePassword');
@@ -142,13 +188,13 @@
  $('#password').on('keyup', function () {
  var password = $(this).val();
  var feedback = $('#password-strength-feedback');
- var strength =0;
+ var strength = 0;
  var messages = [];
 
- if (password.length >=12) {
+ if (password.length >= 12) {
  strength++;
  } else {
- messages.push('at least12 characters');
+ messages.push('at least 12 characters');
  }
 
  if (password.match(/[a-z]/)) {
@@ -176,10 +222,10 @@
  }
 
  var strengthText = 'Password strength: ';
- if (strength <3) {
+ if (strength < 3) {
  feedback.css('color', 'red');
  strengthText += 'Weak. ';
- } else if (strength <5) {
+ } else if (strength < 5) {
  feedback.css('color', 'orange');
  strengthText += 'Medium. ';
  } else {
@@ -187,7 +233,7 @@
  strengthText += 'Strong.';
  }
 
- if (messages.length >0) {
+ if (messages.length > 0) {
  strengthText += ' Missing: ' + messages.join(', ');
  }
 
