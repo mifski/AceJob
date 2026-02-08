@@ -5,280 +5,217 @@
 }
 
 <div class="container mt-5">
-@if (User.Identity?.IsAuthenticated == true)
+    @if (User.Identity?.IsAuthenticated == true)
     {
-        <!-- Welcome Banner -->
- <div class="row mb-4">
-          <div class="col-12">
-      <div class="card welcome-banner text-white shadow-lg">
-      <div class="card-body p-4">
-         <div class="d-flex justify-content-between align-items-center flex-wrap">
-     <div>
-     <h2 class="mb-2 fw-bold">
+   <!-- Welcome Banner -->
+     <div class="row mb-4">
+      <div class="col-12">
+   <div class="card bg-success text-white">
+  <div class="card-body">
+   <div class="d-flex justify-content-between align-items-center">
+          <div>
+          <h2 class="mb-0">
    <i class="bi bi-person-check-fill me-2"></i>
-     Welcome back, @Model.UserFirstName!
- </h2>
-         <p class="mb-0 opacity-90">
-      <i class="bi bi-calendar-check me-2"></i>
-       @if (Model.LastLoginTime.HasValue)
-       {
-      <span>Last login: @Model.LastLoginTime.Value.ToString("MMMM dd, yyyy 'at' hh:mm tt")</span>
-          }
-      else
-    {
-        <span>Welcome to your dashboard</span>
+     Welcome, @Model.UserFirstName @Model.UserLastName!
+      </h2>
+          <p class="mb-0 mt-2 opacity-75">
+  You are successfully logged in.
+   @if (Model.LastLoginTime.HasValue)
+      {
+     <span class="ms-2">| Last login: @Model.LastLoginTime.Value.ToString("dd MMM yyyy, hh:mm tt")</span>
        }
-          </p>
-  </div>
-         </div>
-         </div>
+      </p>
       </div>
+       <form method="post" asp-page="/Logout" class="d-inline">
+   <button type="submit" class="btn btn-light">
+        <i class="bi bi-box-arrow-right me-1"></i>Logout
+  </button>
+   </form>
    </div>
+     </div>
+       </div>
+     </div>
+   </div>
+
+   <!-- User Profile Information -->
+  <div class="row">
+      <div class="col-lg-8">
+          <div class="card shadow-sm mb-4">
+<div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Your Profile Information</h5>
+     </div>
+      <div class="card-body">
+<div class="row">
+    <!-- Personal Info -->
+ <div class="col-md-6">
+      <h6 class="text-muted text-uppercase mb-3">
+     <i class="bi bi-person me-1"></i> Personal Details
+           </h6>
+        <table class="table table-borderless">
+           <tr>
+         <td class="text-muted" style="width: 40%;">Full Name</td>
+          <td><strong>@Model.UserFirstName @Model.UserLastName</strong></td>
+      </tr>
+           <tr>
+     <td class="text-muted">Email</td>
+         <td><strong>@Model.UserEmail</strong></td>
+             </tr>
+       <tr>
+      <td class="text-muted">Gender</td>
+   <td>@Model.UserGender</td>
+         </tr>
+        <tr>
+    <td class="text-muted">Date of Birth</td>
+     <td>@Model.DateOfBirth.ToString("dd MMMM yyyy")</td>
+   </tr>
+            </table>
         </div>
 
-        <!-- Main Content -->
-   <div class="row">
-            <!-- Profile Information -->
-<div class="col-lg-8 mb-4">
-           <div class="card shadow-sm h-100">
-    <div class="card-header bg-primary text-white">
-     <h5 class="mb-0">
-<i class="bi bi-person-badge me-2"></i>Your Profile Information
-    </h5>
-      </div>
-            <div class="card-body">
-     <div class="row">
-  <!-- Personal Details -->
-    <div class="col-md-6 mb-4">
-        <h6 class="text-primary text-uppercase fw-bold mb-3 border-bottom pb-2">
-        <i class="bi bi-person me-2"></i>Personal Details
-  </h6>
-<dl class="row mb-0">
-     <dt class="col-sm-5 text-muted">Full Name:</dt>
-   <dd class="col-sm-7 fw-bold">@Model.UserFirstName @Model.UserLastName</dd>
-   
-         <dt class="col-sm-5 text-muted">Email:</dt>
-       <dd class="col-sm-7">
- <i class="bi bi-envelope me-1"></i>@Model.UserEmail
-       </dd>
-   
-         <dt class="col-sm-5 text-muted">Gender:</dt>
-      <dd class="col-sm-7">@Model.UserGender</dd>
-         
-  <dt class="col-sm-5 text-muted">Date of Birth:</dt>
-<dd class="col-sm-7">
-   <i class="bi bi-calendar3 me-1"></i>@Model.DateOfBirth.ToString("MMMM dd, yyyy")
-        </dd>
-  </dl>
-     </div>
-
-              <!-- Sensitive Information -->
-       <div class="col-md-6 mb-4">
-         <h6 class="text-primary text-uppercase fw-bold mb-3 border-bottom pb-2">
-        <i class="bi bi-shield-lock me-2"></i>Sensitive Information
- </h6>
-     <dl class="row mb-0">
-   <dt class="col-sm-5 text-muted">NRIC:</dt>
-      <dd class="col-sm-7">
-   <span class="badge bg-secondary me-2">@Model.MaskedNRIC</span>
-  <button class="btn btn-sm btn-outline-danger" onclick="toggleNRIC()" id="nricToggleBtn">
-    <i class="bi bi-eye" id="nricToggleIcon"></i> Show
-     </button>
-    <div id="nricDecrypted" style="display: none;" class="mt-2 p-2 bg-light rounded">
- <i class="bi bi-key-fill text-danger me-1"></i>
-           <span class="text-danger fw-bold">@Model.DecryptedNRIC</span>
-   </div>
-    </dd>
-        
- <dt class="col-sm-5 text-muted">Resume:</dt>
-     <dd class="col-sm-7">
-    @if (!string.IsNullOrEmpty(Model.ResumeURL))
-             {
-   <a href="@Model.ResumeURL" target="_blank" class="btn btn-sm btn-outline-primary">
-           <i class="bi bi-file-earmark-pdf me-1"></i>View Resume
-          </a>
- }
-       else
- {
-         <span class="text-muted">
-      <i class="bi bi-x-circle me-1"></i>Not uploaded
+    <!-- Sensitive Info -->
+      <div class="col-md-6">
+       <h6 class="text-muted text-uppercase mb-3">
+  <i class="bi bi-shield-lock me-1"></i> Sensitive Information
+     </h6>
+  <table class="table table-borderless">
+      <tr>
+  <td class="text-muted" style="width: 40%;">NRIC (Masked)</td>
+          <td>
+   <span class="badge bg-secondary">@Model.MaskedNRIC</span>
+     </td>
+        </tr>
+    <tr>
+      <td class="text-muted">NRIC (Decrypted)</td>
+ <td>
+    <span class="text-danger" id="nricDecrypted" style="display: none;">
+   @Model.DecryptedNRIC
      </span>
-    }
-</dd>
-       </dl>
-       </div>
-             </div>
-
-        <!-- About Me Section -->
-       @if (!string.IsNullOrEmpty(Model.WhoAmI))
-         {
-  <hr class="my-3">
-       <h6 class="text-primary text-uppercase fw-bold mb-3">
-       <i class="bi bi-chat-quote me-2"></i>About Me
-           </h6>
-   <div class="bg-light p-3 rounded">
-   <p class="mb-0">@Model.WhoAmI</p>
- </div>
-        }
-    </div>
-    </div>
+            <button class="btn btn-sm btn-outline-danger" onclick="toggleNRIC()">
+     <i class="bi bi-eye" id="nricToggleIcon"></i> Show
+ </button>
+      </td>
+  </tr>
+   <tr>
+   <td class="text-muted">Resume</td>
+       <td>
+       @if (!string.IsNullOrEmpty(Model.ResumeURL))
+       {
+    <a href="@Model.ResumeURL" target="_blank" class="btn btn-sm btn-outline-primary">
+           <i class="bi bi-file-earmark-pdf me-1"></i>View Resume
+   </a>
+           }
+    else
+      {
+  <span class="text-muted">Not uploaded</span>
+          }
+   </td>
+    </tr>
+   </table>
   </div>
+ </div>
 
- <!-- Sidebar -->
-     <div class="col-lg-4">
-     <!-- Recent Activity Card -->
-             <div class="card shadow-sm mb-4 activity-card">
+          <!-- About Me Section -->
+    @if (!string.IsNullOrEmpty(Model.WhoAmI))
+    {
+     <hr>
+       <h6 class="text-muted text-uppercase mb-3">
+  <i class="bi bi-chat-quote me-1"></i> About Me
+      </h6>
+  <p class="bg-light p-3 rounded">@Model.WhoAmI</p>
+         }
+          </div>
+    </div>
+            </div>
+
+  <!-- Recent Activity -->
+  <div class="col-lg-4">
+      <div class="card shadow-sm mb-4">
     <div class="card-header bg-dark text-white">
-    <h5 class="mb-0">
-  <i class="bi bi-clock-history me-2"></i>Recent Activity
-    </h5>
-    </div>
-           <div class="card-body p-0">
-         @if (Model.RecentActivity.Any())
+         <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Activity</h5>
+      </div>
+         <div class="card-body p-0">
+      @if (Model.RecentActivity.Any())
+     {
+    <ul class="list-group list-group-flush">
+     @foreach (var activity in Model.RecentActivity)
              {
-     <ul class="list-group list-group-flush">
-       @foreach (var activity in Model.RecentActivity)
-   {
-   <li class="list-group-item">
-          <div class="d-flex justify-content-between align-items-start">
-          <div class="flex-grow-1">
- <span class="badge @(activity.IsSuccess ? "bg-success" : "bg-danger") mb-1">
- @activity.Action
-            </span>
-  <p class="mb-0 small text-muted">@activity.Description</p>
- </div>
-      <small class="text-muted text-nowrap ms-2">
-     @activity.Timestamp.ToLocalTime().ToString("MMM dd, HH:mm")
-</small>
-       </div>
-  </li>
-     }
-     </ul>
-  }
-      else
-   {
-<div class="empty-state">
-    <i class="bi bi-info-circle"></i>
-             <p class="mb-0">No recent activity</p>
-</div>
-       }
-       </div>
-  </div>
-
-     <!-- Security Status Card -->
-          <div class="card shadow-sm mb-4">
-   <div class="card-header bg-success text-white">
- <h6 class="mb-0">
-      <i class="bi bi-shield-check me-2"></i>Security Status
-         </h6>
- </div>
-           <div class="card-body">
-             <ul class="list-unstyled mb-0">
-     <li class="mb-2 d-flex align-items-center">
-    <i class="bi bi-check-circle-fill text-success me-2"></i>
-      <span class="small">AES-256 Encryption Active</span>
-  </li>
-   <li class="mb-2 d-flex align-items-center">
-   <i class="bi bi-check-circle-fill text-success me-2"></i>
-              <span class="small">Password Hashed (PBKDF2)</span>
-                </li>
-                <li class="d-flex align-items-center">
-            <i class="bi bi-check-circle-fill text-success me-2"></i>
-          <span class="small">HTTPS Connection Secured</span>
-    </li>
-     </ul>
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+           <div>
+         <span class="badge @(activity.IsSuccess ? "bg-success" : "bg-danger") me-2">
+           @activity.Action
+      </span>
+   <small class="text-muted d-block mt-1">
+  @activity.Description
+       </small>
+     </div>
+   <small class="text-muted">
+  @activity.Timestamp.ToLocalTime().ToString("MMM dd, HH:mm")
+               </small>
+         </li>
+      }
+          </ul>
+           }
+  else
+           {
+    <div class="p-3 text-center text-muted">
+   <i class="bi bi-info-circle me-1"></i>No recent activity
+      </div>
+      }
+    </div>
    </div>
- </div>
+
+   <!-- Security Notice -->
+           <div class="card shadow-sm border-warning">
+         <div class="card-body">
+     <h6 class="text-warning">
+   <i class="bi bi-shield-exclamation me-1"></i>Security Notice
+           </h6>
+         <small class="text-muted">
+   Your NRIC is encrypted using AES-256 encryption and stored securely. 
+       Only you can view the decrypted value when logged in.
+   </small>
+         </div>
+       </div>
             </div>
         </div>
- }
-    else
+    }
+ else
     {
         <!-- Not Logged In View -->
-  <div class="row">
-        <div class="col-md-12">
-    <div class="text-center py-5">
-         <div class="mb-4">
- <i class="bi bi-briefcase-fill text-primary" style="font-size: 5rem;"></i>
-        </div>
-        <h1 class="display-3 fw-bold mb-3">Welcome to AceJob</h1>
-   <p class="lead text-muted mb-4">Your gateway to career opportunities with enterprise-grade security</p>
-       
-          <div class="d-flex justify-content-center gap-3 mb-5">
-    <a href="/Register" class="btn btn-primary btn-lg shadow-hover">
-      <i class="bi bi-person-plus me-2"></i>Register Now
-   </a>
-    <a href="/Login" class="btn btn-outline-secondary btn-lg shadow-hover">
-       <i class="bi bi-box-arrow-in-right me-2"></i>Login
-   </a>
-    </div>
-
-    <!-- Features Section -->
-    <div class="row mt-5 text-start">
-   <div class="col-md-4 mb-4">
-   <div class="card h-100 border-0 shadow-sm">
-           <div class="card-body text-center">
-<i class="bi bi-shield-check text-success" style="font-size: 3rem;"></i>
-            <h5 class="mt-3 mb-2">Secure & Encrypted</h5>
-  <p class="text-muted small">Your data is protected with AES-256 encryption and secure password hashing</p>
-       </div>
-          </div>
-             </div>
-         <div class="col-md-4 mb-4">
-<div class="card h-100 border-0 shadow-sm">
-        <div class="card-body text-center">
-          <i class="bi bi-graph-up text-primary" style="font-size: 3rem;"></i>
-<h5 class="mt-3 mb-2">Activity Tracking</h5>
-  <p class="text-muted small">Monitor all your account activities with comprehensive audit logs</p>
+     <div class="row">
+  <div class="col-md-12 text-center">
+ <h1 class="display-4">Welcome to AceJob</h1>
+      <p class="lead mt-4">Your gateway to career opportunities</p>
+              <div class="mt-5">
+     <a href="/Register" class="btn btn-primary btn-lg me-3">
+   <i class="bi bi-person-plus me-2"></i>Register Now
+     </a>
+           <a href="/Login" class="btn btn-outline-secondary btn-lg">
+    <i class="bi bi-box-arrow-in-right me-2"></i>Login
+       </a>
            </div>
-     </div>
-      </div>
-      <div class="col-md-4 mb-4">
-    <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center">
-    <i class="bi bi-lightning-charge text-warning" style="font-size: 3rem;"></i>
-           <h5 class="mt-3 mb-2">Two-Factor Auth</h5>
-      <p class="text-muted small">Add an extra layer of security with 2FA authentication</p>
-   </div>
-         </div>
+        </div>
  </div>
- </div>
-    </div>
-    </div>
-    </div>
- }
+    }
 </div>
 
 @section Scripts {
     <script>
-    function toggleNRIC() {
-   const nricElement = document.getElementById('nricDecrypted');
-   const toggleIcon = document.getElementById('nricToggleIcon');
-     const toggleBtn = document.getElementById('nricToggleBtn');
-        
-      if (nricElement.style.display === 'none') {
-nricElement.style.display = 'block';
- toggleIcon.classList.remove('bi-eye');
-      toggleIcon.classList.add('bi-eye-slash');
-         toggleBtn.innerHTML = '<i class="bi bi-eye-slash" id="nricToggleIcon"></i> Hide';
-        toggleBtn.classList.remove('btn-outline-danger');
-      toggleBtn.classList.add('btn-danger');
+        function toggleNRIC() {
+       const nricElement = document.getElementById('nricDecrypted');
+        const toggleIcon = document.getElementById('nricToggleIcon');
+       const toggleBtn = toggleIcon.parentElement;
+       
+            if (nricElement.style.display === 'none') {
+  nricElement.style.display = 'inline';
+     toggleIcon.classList.remove('bi-eye');
+   toggleIcon.classList.add('bi-eye-slash');
+   toggleBtn.innerHTML = '<i class="bi bi-eye-slash" id="nricToggleIcon"></i> Hide';
      } else {
-     nricElement.style.display = 'none';
-       toggleIcon.classList.remove('bi-eye-slash');
-         toggleIcon.classList.add('bi-eye');
- toggleBtn.innerHTML = '<i class="bi bi-eye" id="nricToggleIcon"></i> Show';
-     toggleBtn.classList.remove('btn-danger');
-   toggleBtn.classList.add('btn-outline-danger');
-  }
-      }
-
-        // Initialize Bootstrap tooltips
-        document.addEventListener('DOMContentLoaded', function () {
- var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-       });
-  });
+   nricElement.style.display = 'none';
+     toggleIcon.classList.remove('bi-eye-slash');
+    toggleIcon.classList.add('bi-eye');
+      toggleBtn.innerHTML = '<i class="bi bi-eye" id="nricToggleIcon"></i> Show';
+            }
+ }
     </script>
 }

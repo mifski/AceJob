@@ -67,49 +67,14 @@ namespace AceJob.Model
     /// </summary>
     public static class AuditActions
     {
-        // Authentication Actions
         public const string Login = "Login";
         public const string Logout = "Logout";
-        public const string FailedLogin = "FailedLogin";
+   public const string FailedLogin = "FailedLogin";
         public const string Lockout = "Lockout";
-        public const string LockoutRecovery = "LockoutRecovery";
         public const string Registration = "Registration";
-        public const string ConcurrentLogin = "ConcurrentLogin";
-        
-        // Password Management Actions
-        public const string PasswordChange = "PasswordChange";
-        public const string PasswordReset = "PasswordReset";
-        public const string PasswordResetRequest = "PasswordResetRequest";
-        public const string ForcedPasswordChange = "ForcedPasswordChange";
-        
-        // Two-Factor Authentication Actions
-        public const string TwoFactorEnabled = "2FA_Enabled";
-        public const string TwoFactorDisabled = "2FA_Disabled";
-        public const string TwoFactorSetup = "2FA_Setup";
-        public const string TwoFactorLogin = "2FA_Login";
-        public const string TwoFactorRecoveryCodes = "2FA_RecoveryCodes";
-        public const string TwoFactorRecoveryUsed = "2FA_RecoveryUsed";
-   
-        // Profile Actions
-        public const string ProfileView = "ProfileView";
+  public const string PasswordChange = "PasswordChange";
         public const string ProfileUpdate = "ProfileUpdate";
-     
-        // Security Events
-        public const string SecurityBreach = "SecurityBreach";
-        public const string SuspiciousActivity = "SuspiciousActivity";
-        public const string ReCaptchaFailure = "ReCaptchaFailure";
-      
-        // File Operations
-        public const string FileUpload = "FileUpload";
-        public const string FileDownload = "FileDownload";
-        public const string FileDelete = "FileDelete";
-        
-        // Administrative Actions
-        public const string AdminAction = "AdminAction";
-        public const string UserCreated = "UserCreated";
-        public const string UserUpdated = "UserUpdated";
-        public const string UserDeleted = "UserDeleted";
-        public const string RoleAssigned = "RoleAssigned";
-        public const string RoleRemoved = "RoleRemoved";
+ public const string ProfileView = "ProfileView";
+        public const string ConcurrentLogin = "ConcurrentLogin";
     }
 }

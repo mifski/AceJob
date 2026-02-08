@@ -13,15 +13,14 @@ using System.Security.Claims;
 namespace AceJob.Pages
 {
  public class RegisterModel : PageModel
-  {
+    {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
     private readonly IWebHostEnvironment _webHostEnvironment;
-     private readonly IAuditService _auditService;
+        private readonly IAuditService _auditService;
         private readonly IPasswordService _passwordService;
-        private readonly IRecaptchaService _recaptchaService;
         private readonly ILogger<RegisterModel> _logger;
 
         [BindProperty]
@@ -33,45 +32,32 @@ namespace AceJob.Pages
          UserManager<ApplicationUser> userManager,
       SignInManager<ApplicationUser> signInManager,
             RoleManager<IdentityRole> roleManager,
-   IConfiguration configuration,
+            IConfiguration configuration,
             IWebHostEnvironment webHostEnvironment,
-         IAuditService auditService,
- IPasswordService passwordService,
-   IRecaptchaService recaptchaService,
+            IAuditService auditService,
+            IPasswordService passwordService,
   ILogger<RegisterModel> logger)
  {
             _userManager = userManager;
-  _signInManager = signInManager;
+         _signInManager = signInManager;
             _roleManager = roleManager;
    _configuration = configuration;
-_webHostEnvironment = webHostEnvironment;
-     _auditService = auditService;
+        _webHostEnvironment = webHostEnvironment;
+        _auditService = auditService;
        _passwordService = passwordService;
-        _recaptchaService = recaptchaService;
   _logger = logger;
- }
+        }
 
     public void OnGet()
-     {
-            // Pass reCAPTCHA site key to the view
-         ViewData["RecaptchaSiteKey"] = _configuration["RecaptchaSettings:SiteKey"];
+        {
    }
 
-    public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostAsync()
         {
-        // Pass reCAPTCHA site key to the view for potential return
-            ViewData["RecaptchaSiteKey"] = _configuration["RecaptchaSettings:SiteKey"];
-
     if (!ModelState.IsValid)
-       {
-         return Page();
-    }
-
-      // Validate reCAPTCHA
-   if (!await ValidateRecaptchaAsync())
-   {
-     return Page(); // Error message already added to ModelState
-         }
+            {
+            return Page();
+            }
 
       // Server-side password complexity validation
    if (!ValidatePasswordComplexity(RModel.Password, out string passwordError))
@@ -80,58 +66,58 @@ _webHostEnvironment = webHostEnvironment;
  return Page();
             }
 
-// Check if email is unique
-    var existingUser = await _userManager.FindByEmailAsync(RModel.Email);
+            // Check if email is unique
+            var existingUser = await _userManager.FindByEmailAsync(RModel.Email);
             if (existingUser != null)
-   {
+     {
             ModelState.AddModelError(string.Empty, "Email address is already registered");
-         return Page();
+            return Page();
      }
 
      // Upload resume file
         var resumeUrl = await UploadResumeAsync(RModel.Resume);
      if (resumeUrl == null && RModel.Resume != null)
  {
-  return Page();
+     return Page();
     }
 
-    // Create user with all registration fields
+        // Create user with all registration fields
      var user = new ApplicationUser()
   {
-     UserName = RModel.Email,
+                UserName = RModel.Email,
        Email = RModel.Email,
      FirstName = RModel.FirstName,
-     LastName = RModel.LastName,
+       LastName = RModel.LastName,
         Gender = RModel.Gender,
     NRIC = EncryptNRIC(RModel.NRIC),
       DateOfBirth = RModel.DateOfBirth,
- ResumeURL = resumeUrl ?? string.Empty,
-WhoAmI = RModel.WhoAmI,
+           ResumeURL = resumeUrl ?? string.Empty,
+                WhoAmI = RModel.WhoAmI,
     PasswordChangedDate = DateTime.UtcNow, // Initialize password changed date
   MustChangePassword = false
-   };
+         };
 
-    // Ensure roles exist
- await EnsureRolesExistAsync();
+            // Ensure roles exist
+            await EnsureRolesExistAsync();
 
        // Create user with password hashing
   var result = await _userManager.CreateAsync(user, RModel.Password);
 
       if (result.Succeeded)
-       {
+          {
   _logger.LogInformation("New user registered: {Email}", user.Email);
 
    // Add initial password to history
   await _passwordService.AddToHistoryAsync(user.Id, user.PasswordHash!);
 
-     // Add user to roles
+        // Add user to roles
         await _userManager.AddToRoleAsync(user, "Admin");
         await _userManager.AddToRoleAsync(user, "HR");
 
         // Log the registration
    await _auditService.LogRegistrationAsync(user.Id, user.Email ?? "");
 
-  // Sign in the user
+        // Sign in the user
       await _signInManager.SignInAsync(user, isPersistent: false);
 
         // Set session data
@@ -156,73 +142,32 @@ WhoAmI = RModel.WhoAmI,
      IdentityConstants.ApplicationScheme,
 principal,
         new AuthenticationProperties
-      {
+        {
          IsPersistent = false,
-IssuedUtc = DateTimeOffset.UtcNow
+            IssuedUtc = DateTimeOffset.UtcNow
         });
 
     return RedirectToPage("Index");
        }
 
-     // Add errors to model state
+            // Add errors to model state
   foreach (var error in result.Errors)
       {
       ModelState.AddModelError(string.Empty, error.Description);
   }
 
-  return Page();
-}
-
-private async Task<bool> ValidateRecaptchaAsync()
-        {
-            var recaptchaEnabled = _configuration.GetValue<bool>("RecaptchaSettings:Enabled", true);
-            if (!recaptchaEnabled)
-            {
-            _logger.LogInformation("reCAPTCHA validation skipped - disabled in configuration");
-             return true;
-            }
-
-         if (string.IsNullOrEmpty(RModel.RecaptchaToken))
-      {
-    _logger.LogWarning("reCAPTCHA token is missing in registration request");
-     ModelState.AddModelError(string.Empty, "Security verification is required. Please try again.");
-  return false;
-    }
-
-            var recaptchaResult = await _recaptchaService.VerifyToken(RModel.RecaptchaToken);
-
-            if (!recaptchaResult.Success)
-            {
-        _logger.LogWarning("reCAPTCHA verification failed for registration. Errors: {Errors}",
-           string.Join(", ", recaptchaResult.ErrorCodes ?? Array.Empty<string>()));
-    ModelState.AddModelError(string.Empty, "Security verification failed. Please try again.");
-     return false;
-  }
-
-            // Check score threshold
-       var minScore = _configuration.GetValue<double>("RecaptchaSettings:MinScore", 0.3);
-       if (recaptchaResult.Score < minScore)
-     {
-                _logger.LogWarning("reCAPTCHA score too low for registration. Score: {Score}, Required: {MinScore}",
-              recaptchaResult.Score, minScore);
-       ModelState.AddModelError(string.Empty, "Security verification failed. Please try again.");
-     return false;
-            }
-
-            _logger.LogInformation("reCAPTCHA verification successful for registration. Score: {Score}", 
-                recaptchaResult.Score);
-         return true;
+            return Page();
         }
 
         private bool ValidatePasswordComplexity(string password, out string errorMessage)
-   {
- errorMessage = string.Empty;
+        {
+            errorMessage = string.Empty;
 
        if (string.IsNullOrEmpty(password))
        {
      errorMessage = "Password is required";
    return false;
-      }
+            }
 
     if (password.Length < 12)
    {
@@ -231,13 +176,13 @@ private async Task<bool> ValidateRecaptchaAsync()
         }
 
   if (!Regex.IsMatch(password, @"[a-z]"))
-     {
+            {
     errorMessage = "Password must contain at least one lowercase letter (a-z)";
     return false;
-}
+            }
 
         if (!Regex.IsMatch(password, @"[A-Z]"))
-     {
+            {
   errorMessage = "Password must contain at least one uppercase letter (A-Z)";
     return false;
          }
@@ -246,64 +191,64 @@ private async Task<bool> ValidateRecaptchaAsync()
   {
      errorMessage = "Password must contain at least one number (0-9)";
  return false;
-    }
+         }
 
   if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?]"))
    {
-   errorMessage = "Password must contain at least one special character (!@#$%^&*()_+-=[]{}|:;',.<>?)";
+      errorMessage = "Password must contain at least one special character (!@#$%^&*()_+-=[]{}|:;',.<>?)";
       return false;
      }
 
             return true;
         }
 
-     private string EncryptNRIC(string plainText)
+        private string EncryptNRIC(string plainText)
       {
             if (string.IsNullOrEmpty(plainText))
        return plainText;
 
        var keyString = _configuration["Encryption:Key"] ?? "MySecureKey12345MySecureKey12345";
-     var ivString = _configuration["Encryption:IV"] ?? "MySecureIV123456";
+            var ivString = _configuration["Encryption:IV"] ?? "MySecureIV123456";
 
             var key = Encoding.UTF8.GetBytes(keyString.PadRight(32).Substring(0, 32));
    var iv = Encoding.UTF8.GetBytes(ivString.PadRight(16).Substring(0, 16));
 
-       using (var aes = Aes.Create())
+         using (var aes = Aes.Create())
      {
                 aes.Key = key;
-           aes.IV = iv;
+                aes.IV = iv;
            var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
   using (var msEncrypt = new MemoryStream())
     {
        using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
       using (var swEncrypt = new StreamWriter(csEncrypt))
-  {
-         swEncrypt.Write(plainText);
+         {
+               swEncrypt.Write(plainText);
           }
-        return Convert.ToBase64String(msEncrypt.ToArray());
+           return Convert.ToBase64String(msEncrypt.ToArray());
          }
             }
-  }
+        }
 
-      private async Task<string?> UploadResumeAsync(IFormFile? file)
+        private async Task<string?> UploadResumeAsync(IFormFile? file)
         {
         if (file == null || file.Length == 0)
-   return null;
+     return null;
 
 if (file.Length > 5 * 1024 * 1024)
-        {
+            {
    ModelState.AddModelError("RModel.Resume", "File size must not exceed 5MB");
         return null;
     }
 
-      var allowedExtensions = new[] { ".pdf", ".docx" };
+          var allowedExtensions = new[] { ".pdf", ".docx" };
    var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
       if (!allowedExtensions.Contains(fileExtension))
        {
     ModelState.AddModelError("RModel.Resume", "Only .pdf and .docx files are allowed");
     return null;
- }
+         }
 
      var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "resumes");
      if (!Directory.Exists(uploadsFolder))
@@ -312,26 +257,26 @@ if (file.Length > 5 * 1024 * 1024)
  }
 
      var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
- var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
    using (var fileStream = new FileStream(filePath, FileMode.Create))
      {
-       await file.CopyToAsync(fileStream);
+                await file.CopyToAsync(fileStream);
         }
 
   return $"/uploads/resumes/{uniqueFileName}";
         }
 
      private async Task EnsureRolesExistAsync()
-   {
-   if (!await _roleManager.RoleExistsAsync("Admin"))
+        {
+          if (!await _roleManager.RoleExistsAsync("Admin"))
       {
-        await _roleManager.CreateAsync(new IdentityRole("Admin"));
+            await _roleManager.CreateAsync(new IdentityRole("Admin"));
        }
 
-  if (!await _roleManager.RoleExistsAsync("HR"))
+       if (!await _roleManager.RoleExistsAsync("HR"))
         {
-   await _roleManager.CreateAsync(new IdentityRole("HR"));
+             await _roleManager.CreateAsync(new IdentityRole("HR"));
             }
         }
     }
