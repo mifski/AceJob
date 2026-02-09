@@ -4,56 +4,50 @@ namespace AceJob.Model
 {
     /// <summary>
     /// Audit log entity for tracking user activities
-  /// </summary>
+    /// </summary>
     public class AuditLog
     {
-     [Key]
-  public int Id { get; set; }
+        [Key]
+        public int Id { get; set; }
 
         /// <summary>
- /// User ID (null for anonymous actions like failed login attempts)
+        /// User ID (null for anonymous actions like failed login attempts)
         /// </summary>
         public string? UserId { get; set; }
 
         /// <summary>
-      /// Email or username associated with the action
+        /// Email or username associated with the action
         /// </summary>
         [MaxLength(256)]
-   public string? UserEmail { get; set; }
+        public string? UserEmail { get; set; }
 
         /// <summary>
         /// Type of action performed (Login, Logout, FailedLogin, Registration, PasswordChange, etc.)
         /// </summary>
-   [Required]
+        [Required]
         [MaxLength(50)]
-     public string Action { get; set; } = string.Empty;
-
-   /// <summary>
-  /// Detailed description of the action
-        /// </summary>
-        [MaxLength(500)]
-   public string? Description { get; set; }
+        public string Action { get; set; } = string.Empty;
 
         /// <summary>
-        /// IP address of the user
+        /// Detailed description of the action
         /// </summary>
-  [MaxLength(45)]
-        public string? IpAddress { get; set; }
+        [MaxLength(500)]
+        public string? Description { get; set; }
 
         /// <summary>
         /// User agent (browser info)
         /// </summary>
-     [MaxLength(500)]
+        [MaxLength(500)]
         public string? UserAgent { get; set; }
 
         /// <summary>
         /// Timestamp of the action
-  /// </summary>
- public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        /// </summary>
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
         /// <summary>
-      /// Whether the action was successful
- /// </summary>
+        /// Whether the action was successful
+        /// </summary>
         public bool IsSuccess { get; set; }
 
         /// <summary>
@@ -77,10 +71,11 @@ namespace AceJob.Model
         public const string ConcurrentLogin = "ConcurrentLogin";
         
         // Password Management Actions
-        public const string PasswordChange = "PasswordChange";
-        public const string PasswordReset = "PasswordReset";
-        public const string PasswordResetRequest = "PasswordResetRequest";
-        public const string ForcedPasswordChange = "ForcedPasswordChange";
+        // Use non-sensitive short codes as values to avoid storing the literal word "password" in logs
+        public const string PasswordChange = "PW_CHG";
+        public const string PasswordReset = "PW_RST";
+        public const string PasswordResetRequest = "PW_RST_REQ";
+        public const string ForcedPasswordChange = "PW_CHG_FORCED";
         
         // Two-Factor Authentication Actions
         public const string TwoFactorEnabled = "2FA_Enabled";
