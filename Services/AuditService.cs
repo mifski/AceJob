@@ -71,6 +71,35 @@ _logger = logger;
     }
 
         /// <summary>
+        /// Return a masked version of an email address for safe logging.
+        /// Examples: "j***@example.com". Returns "Unknown" if null/empty or invalid.
+        /// </summary>
+        private static string MaskEmail(string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return "Unknown";
+            }
+
+            var atIndex = email.IndexOf('@');
+            if (atIndex <= 0 || atIndex == email.Length - 1)
+            {
+                // Not a normal-looking email; avoid logging it verbatim
+                return "Unknown";
+            }
+
+            var localPart = email.Substring(0, atIndex);
+            var domainPart = email.Substring(atIndex + 1);
+
+            if (localPart.Length <= 1)
+            {
+                return $"*@{domainPart}";
+            }
+
+            return $"{localPart[0]}***@{domainPart}";
+       }
+
+        /// <summary>
         /// Log an action to the audit log
   /// </summary>
     public async Task LogAsync(
@@ -100,8 +129,8 @@ UserEmail = userEmail,
   await _context.SaveChangesAsync();
 
      _logger.LogInformation(
-   "Audit: {Action} by {Email} - Success: {IsSuccess} - {Description}",
-   action, userEmail ?? "Unknown", isSuccess, description);
+   "Audit: {Action} for userId={UserId} (email={MaskedEmail}) - Success: {IsSuccess} - {Description}",
+   action, userId ?? "Unknown", MaskEmail(userEmail), isSuccess, description);
        }
 catch (Exception ex)
   {
