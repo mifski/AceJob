@@ -43,7 +43,7 @@ namespace AceJob.Pages
             if (userId != null && userEmail != null)
             {
                 await _auditService.LogLogoutAsync(userId, userEmail);
-                _logger.LogInformation("User {Email} logged out", userEmail);
+                _logger.LogInformation("User {UserId} logged out", userId);
             }
 
             // Clear all session data
@@ -76,7 +76,7 @@ namespace AceJob.Pages
             if (user != null)
             {
                 await _auditService.LogLogoutAsync(user.Id, user.Email ?? "");
-                _logger.LogInformation("User {Email} logged out via GET", user.Email);
+                _logger.LogInformation("User {UserId} logged out via GET", user.Id);
             }
 
             HttpContext.Session.Clear();
